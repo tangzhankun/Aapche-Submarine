@@ -32,14 +32,67 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1ResourceRequirements;
+import org.apache.submarine.server.api.exception.InvalidSpecException;
 import org.apache.submarine.server.api.spec.JobLibrarySpec;
 import org.apache.submarine.server.api.spec.JobSpec;
 import org.apache.submarine.server.api.spec.JobTaskSpec;
+import org.apache.submarine.server.submitter.k8s.model.MLJob;
+import org.apache.submarine.server.submitter.k8s.model.MLJobReplicaSpec;
+import org.apache.submarine.server.submitter.k8s.model.MLJobReplicaType;
+import org.apache.submarine.server.submitter.k8s.model.pytorchjob.PyTorchJob;
+import org.apache.submarine.server.submitter.k8s.model.pytorchjob.PyTorchJobReplicaType;
+import org.apache.submarine.server.submitter.k8s.model.pytorchjob.PyTorchJobSpec;
 import org.apache.submarine.server.submitter.k8s.model.tfjob.TFJob;
 import org.apache.submarine.server.submitter.k8s.model.tfjob.TFJobSpec;
 import org.apache.submarine.server.submitter.k8s.model.tfjob.TFReplicaSpec;
 
 public class JobSpecParser {
+
+  public static MLJob parseJob(JobSpec jobSpec) throws InvalidSpecException {
+    MLJob res = null;
+    // Infer from library name
+    String name = jobSpec.getLibrarySpec().getName();
+    if (JobLibrarySpec.SupportedMLFramework.TENSORFLOW.
+      getName().equalsIgnoreCase(name)) {
+      return parseTFJob(jobSpec);
+    }
+    if (JobLibrarySpec.SupportedMLFramework.PYTORCH.
+      getName().equalsIgnoreCase(name)) {
+      return parsePyTorchJob(jobSpec);
+    }
+    return res;
+  }
+
+
+  public static PyTorchJob parsePyTorchJob(JobSpec jobSpec) throws InvalidSpecException {
+    PyTorchJob pyTorchJob = new PyTorchJob();
+    pyTorchJob.setApiVersion(jobSpec.getSubmitterSpec().getApiVersion());
+    pyTorchJob.setMetadata(parseTFMetadata(jobSpec));
+    pyTorchJob.setSpec(parsePytorchJobSpec(jobSpec));
+    return pyTorchJob;
+  }
+
+  public static PyTorchJobSpec parsePytorchJobSpec(JobSpec jobSpec)
+    throws InvalidSpecException {
+    PyTorchJobSpec pyTorchJobSpec = new PyTorchJobSpec();
+    Map<MLJobReplicaType, MLJobReplicaSpec> replicaSpecMap = new HashMap<>();
+    for (Map.Entry<String, JobTaskSpec> entry : jobSpec.getTaskSpecs().entrySet()) {
+      String replicaType = entry.getKey();
+      JobTaskSpec taskSpec = entry.getValue();
+      if (PyTorchJobReplicaType.isSupportedReplicaType(replicaType)) {
+        MLJobReplicaSpec replicaSpec = new MLJobReplicaSpec();
+        replicaSpec.setReplicas(taskSpec.getReplicas());
+        replicaSpec.setTemplate(parseTemplateSpec(taskSpec, jobSpec.getLibrarySpec()));
+        replicaSpecMap.put(PyTorchJobReplicaType.valueOf(replicaType), replicaSpec);
+      } else {
+        throw new InvalidSpecException("Unrecognized replicat type name: " +
+          entry.getKey() + ", it should be 'master' or 'worker' for PyTorch job");
+      }
+    }
+    pyTorchJobSpec.setReplicaSpecs(replicaSpecMap);
+    return pyTorchJobSpec;
+  }
+
   /**
    * Parse the job spec to {@link TFJob}
    * @param jobSpec job spec

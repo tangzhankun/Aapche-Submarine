@@ -120,4 +120,24 @@ public class JobLibrarySpec {
   public boolean validate() {
     return name != null && image != null && cmd != null;
   }
+
+  /**
+   * The library spec name should be one of the below supported framework name.
+   * The "name" can be used for submitter to infer framework type and take
+   * corresponding action.
+   * */
+  public enum SupportedMLFramework {
+    TENSORFLOW("tensorflow"),
+    PYTORCH("pytorch");
+
+    private String name;
+
+    SupportedMLFramework(String frName) {
+      this.name = frName;
+    }
+    public String getName() {
+      return name;
+    }
+  }
+
 }

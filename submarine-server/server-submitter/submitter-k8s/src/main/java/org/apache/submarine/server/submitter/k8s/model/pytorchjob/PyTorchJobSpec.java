@@ -17,12 +17,35 @@
  * under the License.
  */
 
-package org.apache.submarine.server.api.exception;
+package org.apache.submarine.server.submitter.k8s.model.pytorchjob;
 
-public class UnsupportedJobTypeException extends Exception {
-  private static final long serialVersionUID = 4752254162145918312L;
+import com.google.gson.annotations.SerializedName;
+import org.apache.submarine.server.submitter.k8s.model.MLJobReplicaSpec;
+import org.apache.submarine.server.submitter.k8s.model.MLJobReplicaType;
 
-  public UnsupportedJobTypeException() {
-    super("Unsupported Job Type Exception");
+import java.util.Map;
+
+public class PyTorchJobSpec {
+
+  /**
+   * Key: Master, Worker
+   */
+  @SerializedName("pytorchReplicaSpecs")
+  private Map<MLJobReplicaType, MLJobReplicaSpec> replicaSpecs;
+
+  /**
+   * Get the replica specs.
+   * @return map
+   */
+  public Map<MLJobReplicaType, MLJobReplicaSpec> getReplicaSpecs() {
+    return replicaSpecs;
+  }
+
+  /**
+   * Set replica specs
+   * @param replicaSpecs map
+   */
+  public void setReplicaSpecs(Map<MLJobReplicaType, MLJobReplicaSpec> replicaSpecs) {
+    this.replicaSpecs = replicaSpecs;
   }
 }

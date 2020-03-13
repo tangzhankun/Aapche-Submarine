@@ -22,6 +22,7 @@ package org.apache.submarine.server;
 import org.apache.submarine.commons.utils.SubmarineConfiguration;
 import org.apache.submarine.server.api.JobHandler;
 import org.apache.submarine.server.api.JobSubmitter;
+import org.apache.submarine.server.api.exception.InvalidSpecException;
 import org.apache.submarine.server.api.exception.UnsupportedJobTypeException;
 import org.apache.submarine.server.api.job.Job;
 import org.apache.submarine.server.api.job.JobId;
@@ -90,6 +91,8 @@ public class JobManager implements JobHandler {
         jobs.putIfAbsent(job.getJobId(), submitter.submitJob(spec));
       } catch (UnsupportedJobTypeException e) {
         LOG.warn(e.getMessage(), e);
+      } catch (InvalidSpecException e) {
+        LOG.warn("Invalid job spec: " + spec + ", " + e.getMessage());
       }
     });
     return job;

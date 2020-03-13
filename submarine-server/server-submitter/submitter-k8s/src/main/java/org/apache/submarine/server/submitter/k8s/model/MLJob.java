@@ -60,7 +60,7 @@ public abstract class MLJob {
   }
 
   /**
-   * Set the CRD's name, Default is TFJob
+   * Set the CRD's name
    * @param kind the CRD's name
    */
   public void setKind(String kind) {
