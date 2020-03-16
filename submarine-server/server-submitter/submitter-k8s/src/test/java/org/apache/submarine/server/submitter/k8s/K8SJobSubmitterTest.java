@@ -23,8 +23,6 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1NamespaceList;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
 import org.apache.submarine.server.submitter.k8s.model.CustomResourceJob;
 import org.apache.submarine.server.submitter.k8s.model.CustomResourceJobList;
 import org.apache.submarine.server.submitter.k8s.model.pytorchjob.PyTorchJob;
@@ -40,21 +38,20 @@ import java.net.URL;
 
 /**
  * We have two ways to test submitter for K8s cluster, local and travis CI.
- *
+ * <p>
  * For running the tests locally, ensure that:
  * 1. There's a k8s cluster running somewhere
  * 2. There's a "config" file as ~/.kube/config targeting the cluster
  * 3. A namespace submarine was created
  * 3. The CRDs was created beforehand. The operator doesn't needs to be running.
- *
+ * <p>
  * Use "kubectl -n submarine get tfjob" or "kubectl -n submarine get pytorchjob"
  * to check the status if you comment the deletion job code in method "after()"
- *
- *
+ * <p>
+ * <p>
  * For the travis CI, we use the kind to setup K8s, more info see '.travis.yml' file.
- *  Local: docker run -it --privileged -p 8443:8443 -p 10080:10080 bsycorp/kind:latest-1.15
- *  Travis: See '.travis.yml'
- *
+ * Local: docker run -it --privileged -p 8443:8443 -p 10080:10080 bsycorp/kind:latest-1.15
+ * Travis: See '.travis.yml'
  */
 public class K8SJobSubmitterTest {
   private final String tfJobName = "mnist";
@@ -78,19 +75,19 @@ public class K8SJobSubmitterTest {
     submitter = new K8sJobSubmitter(confPath);
     submitter.initialize(null);
     String ns = "submarine";
-    if (!isEnvReady()){
+    if (!isEnvReady()) {
       throw new ApiException(" Please create a namespace 'submarine'.");
     }
     tfPath = new K8sJobRequest.Path("kubeflow.org", "v1", ns, "tfjobs");
     pyTorchPath = new K8sJobRequest.Path(PyTorchJob.CRD_PYTORCH_GROUP,
-      PyTorchJob.CRD_PYTORCH_VERSION, ns, PyTorchJob.CRD_PYTORCH_PLURAL);
+        PyTorchJob.CRD_PYTORCH_VERSION, ns, PyTorchJob.CRD_PYTORCH_PLURAL);
   }
 
   private boolean isEnvReady() throws ApiException {
     CoreV1Api api = new CoreV1Api();
     V1NamespaceList list = api.listNamespace(null, null, null, null, null, null, null, null);
     for (V1Namespace item : list.getItems()) {
-      if(item.getMetadata().getName().equals("submarine")) {
+      if (item.getMetadata().getName().equals("submarine")) {
         return true;
       }
     }
@@ -128,23 +125,23 @@ public class K8SJobSubmitterTest {
   }
 
   public CustomResourceJob tryCreateCustomJob(K8sJobRequest.Path requestPath,
-    String jobName, String jobSpecFile) throws URISyntaxException {
+      String jobName, String jobSpecFile) throws URISyntaxException {
     CustomResourceJob job = getCustomJob(requestPath, jobName);
     if (job != null) {
       return job;
     }
     return submitter.createCustomJob(
-      new K8sJobRequest(requestPath, getCustomJobSpecFile(jobSpecFile)));
+        new K8sJobRequest(requestPath, getCustomJobSpecFile(jobSpecFile)));
   }
 
   public CustomResourceJobList listCustomJobs(K8sJobRequest.Path requestPath,
-    String jobSpecFile) throws URISyntaxException {
+      String jobSpecFile) throws URISyntaxException {
     return submitter.listCustomResourceJobs(
-          new K8sJobRequest(tfPath, getCustomJobSpecFile(jobSpecFile)));
+        new K8sJobRequest(tfPath, getCustomJobSpecFile(jobSpecFile)));
   }
 
   public CustomResourceJob tryDeleteCustomJob(K8sJobRequest.Path requestPath,
-    String jobName) {
+      String jobName) {
     if (getCustomJob(requestPath, jobName) != null) {
       K8sJobRequest request = new K8sJobRequest(tfPath, null, tfJobName);
       return submitter.deleteCustomResourceJob(request);
@@ -152,7 +149,8 @@ public class K8SJobSubmitterTest {
     return null;
   }
 
-  private CustomResourceJob getCustomJob(K8sJobRequest.Path requestPath, String jobName) {
+  private CustomResourceJob getCustomJob(K8sJobRequest.Path requestPath,
+      String jobName) {
     K8sJobRequest request = new K8sJobRequest(requestPath, null, jobName);
     return submitter.getCustomResourceJob(request);
   }

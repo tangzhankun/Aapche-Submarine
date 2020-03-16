@@ -20,7 +20,6 @@
 package org.apache.submarine.server.api;
 
 import org.apache.submarine.commons.utils.SubmarineConfiguration;
-import org.apache.submarine.server.api.exception.SubmarineRuntimeException;
 
 /**
  * The submitter should implement this interface.
@@ -34,6 +33,7 @@ public interface JobSubmitter extends JobHandler {
 
   /**
    * Get the submitter type which is the unique identifier.
+   *
    * @return unique identifier
    */
   String getSubmitterType();

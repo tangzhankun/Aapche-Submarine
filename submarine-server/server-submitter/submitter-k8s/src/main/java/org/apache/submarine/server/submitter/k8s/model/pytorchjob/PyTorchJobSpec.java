@@ -35,6 +35,7 @@ public class PyTorchJobSpec {
 
   /**
    * Get the replica specs.
+   *
    * @return map
    */
   public Map<MLJobReplicaType, MLJobReplicaSpec> getReplicaSpecs() {
@@ -43,9 +44,11 @@ public class PyTorchJobSpec {
 
   /**
    * Set replica specs
+   *
    * @param replicaSpecs map
    */
-  public void setReplicaSpecs(Map<MLJobReplicaType, MLJobReplicaSpec> replicaSpecs) {
+  public void setReplicaSpecs(
+      Map<MLJobReplicaType, MLJobReplicaSpec> replicaSpecs) {
     this.replicaSpecs = replicaSpecs;
   }
 }

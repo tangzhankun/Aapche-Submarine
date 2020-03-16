@@ -77,10 +77,11 @@ public class K8sJobSubmitter implements JobSubmitter {
     supportedCRDMap = new HashMap<>();
     supportedCRDMap.put("TFJob", "tfjobs");
     supportedCRDMap.put(PyTorchJob.CRD_PYTORCH_KIND,
-      PyTorchJob.CRD_PYTORCH_PLURAL);
+        PyTorchJob.CRD_PYTORCH_PLURAL);
 
     if (confPath == null || confPath.trim().isEmpty()) {
-      confPath = conf.getString(SubmarineConfVars.ConfVars.SUBMARINE_K8S_KUBE_CONFIG);
+      confPath = conf.getString(
+          SubmarineConfVars.ConfVars.SUBMARINE_K8S_KUBE_CONFIG);
     }
     loadClientConfiguration(confPath);
   }
@@ -90,11 +91,12 @@ public class K8sJobSubmitter implements JobSubmitter {
       KubeConfig config = KubeConfig.loadKubeConfig(new FileReader(path));
       ApiClient client = ClientBuilder.kubeconfig(config).build();
       Configuration.setDefaultApiClient(client);
-    } catch (Exception e){
+    } catch (Exception e) {
       LOG.warn("Failed to load the configured K8s kubeconfig file: " +
-        e.getMessage(), e);
+          e.getMessage(), e);
       // try
-      LOG.info("Assume running in the k8s cluster, try to load in-cluster config");
+      LOG.info("Assume running in the k8s cluster, " +
+          "try to load in-cluster config");
       try {
         ApiClient client = ClientBuilder.cluster().build();
         Configuration.setDefaultApiClient(client);
@@ -111,7 +113,7 @@ public class K8sJobSubmitter implements JobSubmitter {
 
   @Override
   public Job submitJob(JobSpec jobSpec)
-    throws UnsupportedJobTypeException, InvalidSpecException {
+      throws UnsupportedJobTypeException, InvalidSpecException {
     if (!supportedCRDMap.containsKey(jobSpec.getSubmitterSpec().getKind())) {
       throw new UnsupportedJobTypeException();
     }
@@ -128,7 +130,8 @@ public class K8sJobSubmitter implements JobSubmitter {
     try {
       CustomObjectsApi api = new CustomObjectsApi();
       api.createNamespacedCustomObject(job.getGroup(), job.getVersion(),
-          job.getMetadata().getNamespace(), supportedCRDMap.get(job.getKind()), job, "true");
+          job.getMetadata().getNamespace(), supportedCRDMap.get(job.getKind()),
+          job, "true");
     } catch (ApiException e) {
       LOG.error("Create {} job: " + e.getMessage(), e);
     }
@@ -155,7 +158,8 @@ public class K8sJobSubmitter implements JobSubmitter {
     try {
       CustomObjectsApi api = new CustomObjectsApi();
       K8sJobRequest.Path path = request.getPath();
-      Object o = api.getNamespacedCustomObject(path.getGroup(), path.getApiVersion(),
+      Object o = api.getNamespacedCustomObject(path.getGroup(),
+          path.getApiVersion(),
           path.getNamespace(), path.getPlural(), request.getJobName());
       Gson gson = new Gson();
       return gson.fromJson(gson.toJson(o), CustomResourceJob.class);
@@ -171,10 +175,12 @@ public class K8sJobSubmitter implements JobSubmitter {
       CustomObjectsApi api = new CustomObjectsApi();
       K8sJobRequest.Path path = request.getPath();
       V1DeleteOptions body =
-          new V1DeleteOptionsBuilder().withApiVersion(path.getApiVersion()).build();
+          new V1DeleteOptionsBuilder().withApiVersion(
+              path.getApiVersion()).build();
       Object o = api.deleteNamespacedCustomObject(path.getGroup(),
           path.getApiVersion(), path.getNamespace(), path.getPlural(),
-          request.getJobName(), body, null, null, null);
+          request.getJobName(), body, null,
+          null, null);
       Gson gson = new Gson();
       return gson.fromJson(gson.toJson(o), CustomResourceJob.class);
     } catch (ApiException ae) {
@@ -188,8 +194,11 @@ public class K8sJobSubmitter implements JobSubmitter {
     try {
       CustomObjectsApi api = new CustomObjectsApi();
       K8sJobRequest.Path path = request.getPath();
-      Object o = api.listNamespacedCustomObject(path.getGroup(), path.getApiVersion(),
-          path.getNamespace(), path.getPlural(), "true", null, null, null, null, null);
+      Object o = api.listNamespacedCustomObject(path.getGroup(),
+          path.getApiVersion(),
+          path.getNamespace(), path.getPlural(), "true",
+          null, null, null,
+          null, null);
       Gson gson = new Gson();
       return gson.fromJson(gson.toJson(o), CustomResourceJobList.class);
     } catch (ApiException ae) {

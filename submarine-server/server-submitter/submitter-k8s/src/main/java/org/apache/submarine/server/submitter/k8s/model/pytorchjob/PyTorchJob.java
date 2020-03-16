@@ -24,10 +24,10 @@ import org.apache.submarine.server.submitter.k8s.model.MLJob;
 
 public class PyTorchJob extends MLJob {
 
-  public final static String CRD_PYTORCH_KIND = "PyTorchJob";
-  public final static String CRD_PYTORCH_PLURAL = "pytorchjobs";
-  public final static String CRD_PYTORCH_GROUP = "kubeflow.org";
-  public final static String CRD_PYTORCH_VERSION = "v1";
+  public static final  String CRD_PYTORCH_KIND = "PyTorchJob";
+  public static final  String CRD_PYTORCH_PLURAL = "pytorchjobs";
+  public static final  String CRD_PYTORCH_GROUP = "kubeflow.org";
+  public static final  String CRD_PYTORCH_VERSION = "v1";
 
 
   @SerializedName("spec")
@@ -40,6 +40,7 @@ public class PyTorchJob extends MLJob {
 
   /**
    * Get the job spec which contains PyTorchJob JSON CRD.
+   *
    * @return job spec
    */
   public PyTorchJobSpec getSpec() {
@@ -48,6 +49,7 @@ public class PyTorchJob extends MLJob {
 
   /**
    * Set the spec
+   *
    * @param spec job spec
    */
   public void setSpec(PyTorchJobSpec spec) {

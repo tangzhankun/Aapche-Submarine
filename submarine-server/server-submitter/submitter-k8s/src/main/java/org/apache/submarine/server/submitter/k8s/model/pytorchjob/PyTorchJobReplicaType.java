@@ -22,7 +22,7 @@ package org.apache.submarine.server.submitter.k8s.model.pytorchjob;
 import com.google.gson.annotations.SerializedName;
 import org.apache.submarine.server.submitter.k8s.model.MLJobReplicaType;
 
-public enum  PyTorchJobReplicaType implements MLJobReplicaType {
+public enum PyTorchJobReplicaType implements MLJobReplicaType {
 
   @SerializedName("Master")
   Master("Master"),
@@ -42,6 +42,6 @@ public enum  PyTorchJobReplicaType implements MLJobReplicaType {
 
   public static boolean isSupportedReplicaType(String type) {
     return type.equalsIgnoreCase("Master") ||
-      type.equalsIgnoreCase("Worker");
+        type.equalsIgnoreCase("Worker");
   }
 }

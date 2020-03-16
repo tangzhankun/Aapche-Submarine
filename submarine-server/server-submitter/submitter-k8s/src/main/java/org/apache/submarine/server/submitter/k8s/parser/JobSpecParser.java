@@ -19,12 +19,6 @@
 
 package org.apache.submarine.server.submitter.k8s.parser;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
@@ -46,6 +40,12 @@ import org.apache.submarine.server.submitter.k8s.model.tfjob.TFJob;
 import org.apache.submarine.server.submitter.k8s.model.tfjob.TFJobSpec;
 import org.apache.submarine.server.submitter.k8s.model.tfjob.TFReplicaSpec;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class JobSpecParser {
 
   public static MLJob parseJob(JobSpec jobSpec) throws InvalidSpecException {
@@ -53,18 +53,19 @@ public class JobSpecParser {
     // Infer from library name
     String name = jobSpec.getLibrarySpec().getName();
     if (JobLibrarySpec.SupportedMLFramework.TENSORFLOW.
-      getName().equalsIgnoreCase(name)) {
+        getName().equalsIgnoreCase(name)) {
       return parseTFJob(jobSpec);
     }
     if (JobLibrarySpec.SupportedMLFramework.PYTORCH.
-      getName().equalsIgnoreCase(name)) {
+        getName().equalsIgnoreCase(name)) {
       return parsePyTorchJob(jobSpec);
     }
     return res;
   }
 
 
-  public static PyTorchJob parsePyTorchJob(JobSpec jobSpec) throws InvalidSpecException {
+  public static PyTorchJob parsePyTorchJob(
+      JobSpec jobSpec) throws InvalidSpecException {
     PyTorchJob pyTorchJob = new PyTorchJob();
     pyTorchJob.setApiVersion(jobSpec.getSubmitterSpec().getApiVersion());
     pyTorchJob.setMetadata(parseTFMetadata(jobSpec));
@@ -73,7 +74,7 @@ public class JobSpecParser {
   }
 
   public static PyTorchJobSpec parsePytorchJobSpec(JobSpec jobSpec)
-    throws InvalidSpecException {
+      throws InvalidSpecException {
     PyTorchJobSpec pyTorchJobSpec = new PyTorchJobSpec();
     Map<MLJobReplicaType, MLJobReplicaSpec> replicaSpecMap = new HashMap<>();
     for (Map.Entry<String, JobTaskSpec> entry : jobSpec.getTaskSpecs().entrySet()) {
@@ -86,7 +87,7 @@ public class JobSpecParser {
         replicaSpecMap.put(PyTorchJobReplicaType.valueOf(replicaType), replicaSpec);
       } else {
         throw new InvalidSpecException("Unrecognized replicat type name: " +
-          entry.getKey() + ", it should be 'master' or 'worker' for PyTorch job");
+            entry.getKey() + ", it should be 'master' or 'worker' for PyTorch job");
       }
     }
     pyTorchJobSpec.setReplicaSpecs(replicaSpecMap);
@@ -95,6 +96,7 @@ public class JobSpecParser {
 
   /**
    * Parse the job spec to {@link TFJob}
+   *
    * @param jobSpec job spec
    * @return the TFJob object
    */
@@ -126,7 +128,8 @@ public class JobSpecParser {
     return tfJobSpec;
   }
 
-  private static V1PodTemplateSpec parseTemplateSpec(JobTaskSpec taskSpec, JobLibrarySpec libSpec) {
+  private static V1PodTemplateSpec parseTemplateSpec(JobTaskSpec taskSpec,
+      JobLibrarySpec libSpec) {
     V1PodTemplateSpec templateSpec = new V1PodTemplateSpec();
     V1PodSpec podSpec = new V1PodSpec();
     List<V1Container> containers = new ArrayList<>();
@@ -155,7 +158,8 @@ public class JobSpecParser {
     return templateSpec;
   }
 
-  private static List<V1EnvVar> parseEnvVars(JobTaskSpec spec, Map<String, String> defaultEnvs) {
+  private static List<V1EnvVar> parseEnvVars(JobTaskSpec spec,
+      Map<String, String> defaultEnvs) {
     if (spec.getEnvVars() != null) {
       return parseEnvVars(spec.getEnvVars());
     }
