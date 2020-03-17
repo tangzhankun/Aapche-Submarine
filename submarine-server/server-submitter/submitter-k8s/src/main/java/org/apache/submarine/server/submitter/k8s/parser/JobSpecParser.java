@@ -179,6 +179,7 @@ public class JobSpecParser {
 
   private static Map<String, Quantity> parseResources(JobTaskSpec taskSpec) {
     Map<String, Quantity> resources = new HashMap<>();
+    taskSpec.setResources(taskSpec.getResources());
     if (taskSpec.getCpu() != null) {
       resources.put("cpu", new Quantity(taskSpec.getCpu()));
     }
