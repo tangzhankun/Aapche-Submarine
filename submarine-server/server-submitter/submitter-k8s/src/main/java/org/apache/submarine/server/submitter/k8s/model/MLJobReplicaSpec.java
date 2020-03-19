@@ -22,6 +22,8 @@ package org.apache.submarine.server.submitter.k8s.model;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 
+import java.math.BigDecimal;
+
 /**
  * Both PyTorch and Tensorflow CRD definition uses this.
  * */
@@ -89,4 +91,31 @@ public class MLJobReplicaSpec {
   public void setRestartPolicy(String restartPolicy) {
     this.restartPolicy = restartPolicy;
   }
+
+  public String getContainerCommand() {
+    V1PodTemplateSpec podSpec = getTemplate();
+    return String.join(" ",
+        podSpec.getSpec().getContainers().get(0).getCommand());
+  }
+
+  public String getContainerMemMB() {
+    V1PodTemplateSpec podSpec = getTemplate();
+    return String.join(" ",
+        podSpec.getSpec().getContainers().get(0)
+            .getResources().getLimits().get("memory").
+            getNumber().divide(BigDecimal.valueOf(1000000)).toString() + "M");
+  }
+
+  public String getContainerCpu() {
+    V1PodTemplateSpec podSpec = getTemplate();
+    return podSpec.getSpec().getContainers().get(0)
+        .getResources().getLimits().get("cpu").getNumber().toString();
+  }
+
+  public String getContainerImageName() {
+    V1PodTemplateSpec podSpec = getTemplate();
+    return podSpec.getSpec().getContainers().get(0)
+        .getImage();
+  }
+
 }

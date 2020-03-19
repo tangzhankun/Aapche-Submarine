@@ -136,8 +136,8 @@ public class K8SJobSubmitterTest {
 
   @Test
   public void testRunPyTorchJobPerRequest() throws URISyntaxException,
-      IOException, UnsupportedJobTypeException, InvalidSpecException{
-    JobSpec jobSpec = buildFromJson(pytorchJobReqFile);
+      IOException, UnsupportedJobTypeException, InvalidSpecException {
+    JobSpec jobSpec = buildFromJsonFile(pytorchJobReqFile);
     Job job = submitter.submitJob(jobSpec);
     Assert.assertNotNull(job);
     CustomResourceJob cjob = getCustomJob(pyTorchPath, pytorchJobName);
@@ -145,13 +145,13 @@ public class K8SJobSubmitterTest {
     Assert.assertNotNull(cjob);
   }
 
-  public JobSpec buildFromJson(String filePath) throws IOException,
+  private JobSpec buildFromJsonFile(String filePath) throws IOException,
       URISyntaxException {
     Gson gson = new GsonBuilder().create();
     try (Reader reader = Files.newBufferedReader(
         getCustomJobSpecFile(filePath).toPath(),
         StandardCharsets.UTF_8)) {
-       return gson.fromJson(reader, JobSpec.class);
+      return gson.fromJson(reader, JobSpec.class);
     }
   }
 

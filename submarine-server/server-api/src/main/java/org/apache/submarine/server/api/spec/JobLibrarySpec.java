@@ -138,6 +138,15 @@ public class JobLibrarySpec {
     public String getName() {
       return name;
     }
+
+    public static String[] names() {
+      SupportedMLFramework[] frameworks = values();
+      String[] names = new String[frameworks.length];
+      for (int i = 0; i < frameworks.length; i++) {
+        names[i] = frameworks[i].name();
+      }
+      return names;
+    }
   }
 
 }

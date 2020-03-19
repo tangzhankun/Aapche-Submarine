@@ -55,12 +55,14 @@ public class JobSpecParser {
     if (JobLibrarySpec.SupportedMLFramework.TENSORFLOW.
         getName().equalsIgnoreCase(name)) {
       return parseTFJob(jobSpec);
-    }
-    if (JobLibrarySpec.SupportedMLFramework.PYTORCH.
+    } else if (JobLibrarySpec.SupportedMLFramework.PYTORCH.
         getName().equalsIgnoreCase(name)) {
       return parsePyTorchJob(jobSpec);
+    } else {
+      throw new InvalidSpecException("Unsupported framework name: " + name +
+          ". Supported frameworks are: " +
+          String.join(",", JobLibrarySpec.SupportedMLFramework.names()));
     }
-    return res;
   }
 
 
@@ -86,7 +88,7 @@ public class JobSpecParser {
         replicaSpec.setTemplate(parseTemplateSpec(taskSpec, jobSpec.getLibrarySpec()));
         replicaSpecMap.put(PyTorchJobReplicaType.valueOf(replicaType), replicaSpec);
       } else {
-        throw new InvalidSpecException("Unrecognized replicat type name: " +
+        throw new InvalidSpecException("Unrecognized replica type name: " +
             entry.getKey() + ", it should be 'master' or 'worker' for PyTorch job");
       }
     }

@@ -216,9 +216,4 @@ public class K8sJobSubmitter implements JobSubmitter {
     }
     return null;
   }
-
-  public void setSupportedCRDMap(
-      Map<String, String> supportedCRDMap) {
-    this.supportedCRDMap = supportedCRDMap;
-  }
 }
