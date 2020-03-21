@@ -19,7 +19,6 @@
 
 package org.apache.submarine.server.api;
 
-import org.apache.submarine.server.api.exception.InvalidSpecException;
 import org.apache.submarine.server.api.exception.UnsupportedJobTypeException;
 import org.apache.submarine.server.api.job.Job;
 import org.apache.submarine.server.api.spec.JobSpec;
@@ -32,9 +31,9 @@ public interface JobHandler {
    * Submit job
    * @param jobSpec job spec
    * @return job object
-   * @throws UnsupportedJobTypeException caused by the unsupported job type
+   * @throws Exception exception thrown
    */
-  Job submitJob(JobSpec jobSpec) throws UnsupportedJobTypeException, InvalidSpecException;
+  Job submitJob(JobSpec jobSpec) throws Exception;
 
   /**
    * Get job info

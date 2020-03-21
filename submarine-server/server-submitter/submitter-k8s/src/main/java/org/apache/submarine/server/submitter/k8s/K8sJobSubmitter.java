@@ -32,6 +32,7 @@ import io.kubernetes.client.util.KubeConfig;
 import org.apache.submarine.commons.utils.SubmarineConfVars;
 import org.apache.submarine.commons.utils.SubmarineConfiguration;
 import org.apache.submarine.commons.utils.exception.SubmarineRuntimeException;
+import org.apache.submarine.server.api.JobLogHandler;
 import org.apache.submarine.server.api.JobSubmitter;
 import org.apache.submarine.server.api.exception.InvalidSpecException;
 import org.apache.submarine.server.api.job.Job;
@@ -45,11 +46,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * JobSubmitter for Kubernetes Cluster.
  */
-public class K8sJobSubmitter implements JobSubmitter {
+public class K8sJobSubmitter implements JobSubmitter, JobLogHandler {
   private final Logger LOG = LoggerFactory.getLogger(K8sJobSubmitter.class);
 
   private String confPath;
@@ -193,6 +195,12 @@ public class K8sJobSubmitter implements JobSubmitter {
     } catch (ApiException ae) {
       LOG.error("Exceptions when listing CRD jobs: " + ae.getMessage(), ae);
     }
+    return null;
+  }
+
+  @Override
+  public InputStream getLogStream(Job job) {
+
     return null;
   }
 }

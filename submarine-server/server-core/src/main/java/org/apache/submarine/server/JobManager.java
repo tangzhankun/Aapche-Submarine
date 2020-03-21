@@ -22,6 +22,7 @@ package org.apache.submarine.server;
 import org.apache.submarine.commons.utils.SubmarineConfiguration;
 import org.apache.submarine.server.api.JobHandler;
 import org.apache.submarine.server.api.JobSubmitter;
+import org.apache.submarine.server.api.exception.DuplicatedJobSubmittionException;
 import org.apache.submarine.server.api.exception.InvalidSpecException;
 import org.apache.submarine.server.api.exception.UnsupportedJobTypeException;
 import org.apache.submarine.server.api.job.Job;
@@ -46,6 +47,9 @@ public class JobManager implements JobHandler {
   private final AtomicInteger jobCounter = new AtomicInteger(0);
 
   private final ConcurrentMap<JobId, Job> jobs = new ConcurrentHashMap<>();
+
+  // Key is job identifier. Can be used to loop if the job can be submitted.
+  private final ConcurrentMap<String, Job> identifierToJobs = new ConcurrentHashMap<>();
 
   private SubmitterManager submitterManager;
   private ExecutorService executorService;
@@ -73,7 +77,8 @@ public class JobManager implements JobHandler {
   }
 
   @Override
-  public Job submitJob(JobSpec spec) throws UnsupportedJobTypeException {
+  public Job submitJob(JobSpec spec) throws UnsupportedJobTypeException,
+      DuplicatedJobSubmittionException{
     if (!spec.validate()) {
       return null;
     }
@@ -84,11 +89,26 @@ public class JobManager implements JobHandler {
       throw new UnsupportedJobTypeException();
     }
 
+    String identifier = generateIdentifier(spec);
+
+    if (identifierToJobs.get(identifier) != null) {
+      throw new DuplicatedJobSubmittionException(
+          String.format("Job[namespace: %s, name: %s] name already exists." +
+              " Please change a name or namespace.",
+              spec.getSubmitterSpec().getNamespace(),
+              spec.getName()));
+    }
+
     Job job = new Job();
     job.setJobId(generateJobId());
     executorService.submit(() -> {
       try {
-        jobs.putIfAbsent(job.getJobId(), submitter.submitJob(spec));
+        Job temp = submitter.submitJob(spec);
+        job.setName(temp.getName());
+        job.setIdentifier(
+            spec.getSubmitterSpec().getNamespace() + "-" + temp.getName());
+        jobs.putIfAbsent(job.getJobId(), job);
+        identifierToJobs.putIfAbsent(job.getIdentifier(), job);
       } catch (UnsupportedJobTypeException e) {
         LOG.error(e.getMessage(), e);
       } catch (InvalidSpecException e) {
@@ -100,5 +120,9 @@ public class JobManager implements JobHandler {
 
   private JobId generateJobId() {
     return JobId.newInstance(SubmarineServer.getServerTimeStamp(), jobCounter.incrementAndGet());
+  }
+
+  public String generateIdentifier(JobSpec spec) {
+    return spec.getSubmitterSpec().getNamespace() + "-" + spec.getName();
   }
 }
