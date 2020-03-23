@@ -20,6 +20,7 @@
 package org.apache.submarine.server.rest;
 
 import org.apache.submarine.server.JobManager;
+import org.apache.submarine.server.api.exception.DuplicatedJobSubmittionException;
 import org.apache.submarine.server.api.exception.UnsupportedJobTypeException;
 import org.apache.submarine.server.api.job.Job;
 import org.apache.submarine.server.api.job.JobId;
@@ -35,7 +36,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -66,7 +66,7 @@ public class JobManagerRestApi {
   @Consumes({RestConstants.MEDIA_TYPE_YAML, MediaType.APPLICATION_JSON})
   public Response submitJob(JobSpec jobSpec) {
     if (!jobSpec.validate()) {
-      return new JsonResponse.Builder<String>(Response.Status.ACCEPTED)
+      return new JsonResponse.Builder<String>(Response.Status.BAD_REQUEST)
           .success(false).result("Invalid params.").build();
     }
 
@@ -75,7 +75,10 @@ public class JobManagerRestApi {
       return new JsonResponse.Builder<Job>(Response.Status.OK)
           .success(true).result(job).build();
     } catch (UnsupportedJobTypeException e) {
-      return new JsonResponse.Builder<String>(Response.Status.ACCEPTED)
+      return new JsonResponse.Builder<String>(Response.Status.BAD_REQUEST)
+          .success(false).result(e.getMessage()).build();
+    } catch (DuplicatedJobSubmittionException e) {
+      return new JsonResponse.Builder<String>(Response.Status.BAD_REQUEST)
           .success(false).result(e.getMessage()).build();
     }
   }
@@ -86,9 +89,9 @@ public class JobManagerRestApi {
    */
   @GET
   public Response listJob() {
-    // TODO(jiwq): Hook JobManager when 0.4.0 released
-    return new JsonResponse.Builder<List<Job>>(Response.Status.OK)
-        .success(true).result(new ArrayList<>()).build();
+    List<JobId> list = JobManager.getInstance().getJobs();
+    return new JsonResponse.Builder<List<JobId>>(Response.Status.OK)
+        .success(true).result(list).build();
   }
 
   /**

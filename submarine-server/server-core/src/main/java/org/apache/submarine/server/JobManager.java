@@ -31,10 +31,10 @@ import org.apache.submarine.server.api.spec.JobSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -51,8 +51,10 @@ public class JobManager implements JobHandler {
   // Key is job identifier. Can be used to loop if the job can be submitted.
   private final ConcurrentMap<String, Job> identifierToJobs = new ConcurrentHashMap<>();
 
+  // Key is job id string.
+  private final ConcurrentMap<String, Job> idStringToJobs = new ConcurrentHashMap<>();
+
   private SubmitterManager submitterManager;
-  private ExecutorService executorService;
 
   /**
    * Get the singleton instance
@@ -73,24 +75,20 @@ public class JobManager implements JobHandler {
 
   private JobManager(SubmitterManager submitterManager) {
     this.submitterManager = submitterManager;
-    this.executorService = Executors.newFixedThreadPool(50);
   }
 
   @Override
   public Job submitJob(JobSpec spec) throws UnsupportedJobTypeException,
-      DuplicatedJobSubmittionException{
+      DuplicatedJobSubmittionException {
     if (!spec.validate()) {
       return null;
     }
-
     JobSubmitter submitter = submitterManager.getSubmitterByType(
         spec.getSubmitterSpec().getType());
     if (submitter == null) {
       throw new UnsupportedJobTypeException();
     }
-
     String identifier = generateIdentifier(spec);
-
     if (identifierToJobs.get(identifier) != null) {
       throw new DuplicatedJobSubmittionException(
           String.format("Job[namespace: %s, name: %s] name already exists." +
@@ -98,23 +96,27 @@ public class JobManager implements JobHandler {
               spec.getSubmitterSpec().getNamespace(),
               spec.getName()));
     }
-
     Job job = new Job();
+    job.setSpec(spec);
     job.setJobId(generateJobId());
-    executorService.submit(() -> {
-      try {
-        Job temp = submitter.submitJob(spec);
-        job.setName(temp.getName());
-        job.setIdentifier(
-            spec.getSubmitterSpec().getNamespace() + "-" + temp.getName());
-        jobs.putIfAbsent(job.getJobId(), job);
-        identifierToJobs.putIfAbsent(job.getIdentifier(), job);
-      } catch (UnsupportedJobTypeException e) {
-        LOG.error(e.getMessage(), e);
-      } catch (InvalidSpecException e) {
-        LOG.error("Invalid job spec: " + spec + ", " + e.getMessage());
-      }
-    });
+    LOG.info("New job accepted: " + job.toString());
+    try {
+      Job temp = submitter.submitJob(spec);
+      LOG.info("Try submit job: " + job.toString());
+      job.setName(temp.getName());
+      job.setIdentifier(
+          spec.getSubmitterSpec().getNamespace() + "-" + temp.getName());
+      jobs.putIfAbsent(job.getJobId(), job);
+      identifierToJobs.putIfAbsent(job.getIdentifier(), job);
+      idStringToJobs.put(job.getJobId().toString(), job);
+      LOG.info("New job submitted successfully: " + job.toString());
+    } catch (InvalidSpecException e) {
+      LOG.error("Invalid job spec: " + spec + ", " + e.getMessage());
+      return null;
+    } catch (Exception e) {
+      LOG.error("Unknown exception", e.getMessage(), e.getStackTrace());
+      return null;
+    }
     return job;
   }
 
@@ -123,6 +125,26 @@ public class JobManager implements JobHandler {
   }
 
   public String generateIdentifier(JobSpec spec) {
-    return spec.getSubmitterSpec().getNamespace() + "-" + spec.getName();
+    return spec.getSubmitterSpec().getNamespace() + "-" +
+        spec.getLibrarySpec().getName() + "-" +
+        spec.getName();
   }
+
+  public Job getHistoryJob(String jobId) {
+    return idStringToJobs.get(jobId);
+  }
+
+  public JobSubmitter getJobSubmitter(String jobId) {
+    if (this.idStringToJobs.get(jobId) == null) {
+      LOG.error("Unknown job id.");
+      return null;
+    }
+    return submitterManager.getSubmitterByType(this.idStringToJobs.get(
+        jobId).getSpec().getSubmitterSpec().getType());
+  }
+
+  public List<JobId> getJobs() {
+    return new ArrayList<JobId>(jobs.keySet());
+  }
+
 }

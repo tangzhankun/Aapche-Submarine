@@ -19,6 +19,8 @@
 
 package org.apache.submarine.server.api.job;
 
+import org.apache.submarine.server.api.spec.JobSpec;
+
 /**
  * The Generic Machine Learning Job in Submarine.
  */
@@ -26,6 +28,7 @@ public class Job {
   private JobId jobId;
   private String name;
   private String identifier;
+  private JobSpec spec;
 
   /**
    * Get the job instance
@@ -92,5 +95,20 @@ public class Job {
    */
   public void setIdentifier(String identifier) {
     this.identifier = identifier;
+  }
+
+  public JobSpec getSpec() {
+    return spec;
+  }
+
+  public void setSpec(JobSpec spec) {
+    this.spec = spec;
+  }
+
+  @Override
+  public String toString() {
+    return "[jobId:" + this.jobId + "," +
+        "jobName:" + this.name +
+        ", identifier:" + this.identifier + "]";
   }
 }

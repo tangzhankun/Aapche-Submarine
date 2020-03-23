@@ -24,18 +24,22 @@ import com.google.gson.Gson;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Configuration;
+import io.kubernetes.client.PodLogs;
+import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1DeleteOptionsBuilder;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
 import org.apache.submarine.commons.utils.SubmarineConfVars;
 import org.apache.submarine.commons.utils.SubmarineConfiguration;
 import org.apache.submarine.commons.utils.exception.SubmarineRuntimeException;
-import org.apache.submarine.server.api.JobLogHandler;
 import org.apache.submarine.server.api.JobSubmitter;
 import org.apache.submarine.server.api.exception.InvalidSpecException;
 import org.apache.submarine.server.api.job.Job;
+import org.apache.submarine.server.api.spec.JobLibrarySpec;
 import org.apache.submarine.server.api.spec.JobSpec;
 import org.apache.submarine.server.submitter.k8s.model.CustomResourceJob;
 import org.apache.submarine.server.submitter.k8s.model.CustomResourceJobList;
@@ -51,15 +55,21 @@ import java.io.InputStream;
 /**
  * JobSubmitter for Kubernetes Cluster.
  */
-public class K8sJobSubmitter implements JobSubmitter, JobLogHandler {
+public class K8sJobSubmitter implements JobSubmitter {
   private final Logger LOG = LoggerFactory.getLogger(K8sJobSubmitter.class);
 
+  private static final String TF_JOB_SELECTOR_KEY = "tf-job-name=";
+  private static final String PYTORCH_JOB_SELECTOR_KEY = "pytorch-job-name=";
+
   private String confPath;
+
+  ApiClient client;
 
   // K8s API client for CRD
   private CustomObjectsApi api;
 
-  public K8sJobSubmitter() {}
+  public K8sJobSubmitter() {
+  }
 
   public K8sJobSubmitter(String confPath) {
     this.confPath = confPath;
@@ -80,7 +90,7 @@ public class K8sJobSubmitter implements JobSubmitter, JobLogHandler {
   private void loadClientConfiguration(String path) {
     try {
       KubeConfig config = KubeConfig.loadKubeConfig(new FileReader(path));
-      ApiClient client = ClientBuilder.kubeconfig(config).build();
+      client = ClientBuilder.kubeconfig(config).build();
       Configuration.setDefaultApiClient(client);
     } catch (Exception e) {
       LOG.warn("Failed to load the configured K8s kubeconfig file: " +
@@ -200,7 +210,52 @@ public class K8sJobSubmitter implements JobSubmitter, JobLogHandler {
 
   @Override
   public InputStream getLogStream(Job job) {
-
+    if (job == null) {
+      return null;
+    }
+    CoreV1Api coreApi = new CoreV1Api(client);
+    PodLogs logs = new PodLogs();
+    try {
+      V1PodList podList = coreApi.listNamespacedPod(
+          job.getSpec().getSubmitterSpec().getNamespace(),
+          "false", null, null,
+          getJobLabelSelector(job), null, null,
+          null, null);
+      V1Pod pod = podList.getItems().get(0);
+      return logs.streamNamespacedPodLog(pod);
+    } catch (ApiException e) {
+      LOG.warn("Error when listing pod for job:" + job.toString(), e.getMessage());
+    } catch (IOException e) {
+      LOG.warn("Error when get pod log stream", e.getMessage());
+    }
     return null;
+  }
+
+  public InputStream getLogStream() {
+    CoreV1Api coreApi = new CoreV1Api(client);
+    PodLogs logs = new PodLogs();
+    try {
+      V1PodList podList = coreApi.listNamespacedPod(
+          "submarine",
+          "false", null, null,
+          "pytorch-job-name=mnist", null, null,
+          null, null);
+      V1Pod pod = podList.getItems().get(0);
+      return logs.streamNamespacedPodLog(pod);
+    } catch (ApiException e) {
+      LOG.warn("Error when listing pod for job:", e.getMessage());
+    } catch (IOException e) {
+      LOG.warn("Error when get pod log stream", e.getMessage());
+    }
+    return null;
+  }
+
+  public String getJobLabelSelector(Job job) {
+    if (job.getSpec().getLibrarySpec()
+        .getName().equalsIgnoreCase(JobLibrarySpec.SupportedMLFramework.TENSORFLOW.getName())) {
+      return TF_JOB_SELECTOR_KEY + job.getSpec().getName();
+    } else {
+      return PYTORCH_JOB_SELECTOR_KEY + job.getSpec().getName();
+    }
   }
 }

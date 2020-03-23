@@ -49,7 +49,6 @@ import java.util.Map;
 public class JobSpecParser {
 
   public static MLJob parseJob(JobSpec jobSpec) throws InvalidSpecException {
-    MLJob res = null;
     // Infer from library name
     String name = jobSpec.getLibrarySpec().getName();
     if (JobLibrarySpec.SupportedMLFramework.TENSORFLOW.

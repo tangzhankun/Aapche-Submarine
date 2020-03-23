@@ -34,4 +34,6 @@ public class RestConstants {
 
   public static final String NODES = "nodes";
   public static final String NODE = "node";
+
+  public static final String LOGS = "logs";
 }

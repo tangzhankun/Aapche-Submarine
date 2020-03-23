@@ -24,7 +24,7 @@ import org.apache.submarine.commons.utils.SubmarineConfiguration;
 /**
  * The submitter should implement this interface.
  */
-public interface JobSubmitter extends JobHandler {
+public interface JobSubmitter extends JobHandler, JobLogHandler {
 
   /**
    * Initialize the submitter related code
