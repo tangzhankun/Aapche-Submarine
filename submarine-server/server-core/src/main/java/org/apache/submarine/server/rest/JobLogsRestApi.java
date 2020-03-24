@@ -29,12 +29,18 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 /**
  * The API for retrieving job logs
@@ -60,15 +66,21 @@ public class JobLogsRestApi {
           .success(false).result("Unknown error.").build();
     }
     BufferedReader in = new BufferedReader(new InputStreamReader(input));
-    String line = null;
-    StringBuilder sb = new StringBuilder();
-    try {
-      while ((line = in.readLine()) != null) {
-        sb.append(line + "\n");
+
+    StreamingOutput stream = new StreamingOutput() {
+      @Override
+      public void write(
+          OutputStream os) throws IOException,
+          WebApplicationException {
+        String line = null;
+        Writer writer = new BufferedWriter(new OutputStreamWriter(os));
+        while ((line = in.readLine()) != null) {
+          writer.write(line + "\n");
+          writer.flush();
+        }
+        in.close();
       }
-    } catch (IOException e) {
-      LOG.warn("Found IO exception when reading job log", e.getMessage());
-    }
-    return Response.ok(sb.toString()).build();
+    };
+    return Response.ok(stream).build();
   }
 }
